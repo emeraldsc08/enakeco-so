@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:enakeco_so/core/di/injector.dart';
 import 'package:enakeco_so/features/rtl/data/datasources/product_remote_datasource.dart';
 import 'package:enakeco_so/features/rtl/data/repositories/product_repository.dart';
 import 'package:enakeco_so/features/rtl/presentation/pages/qr_scanner_page.dart';
@@ -10,17 +11,17 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/global_branch_provider.dart';
 
 class ProductDetailPage extends StatefulWidget {
-  final String cKode;
+  final String? cKode; // Kode produk (digunakan ketika klik dari list produk, null jika dari scan)
+  final String? cKodebar; // Barcode value (digunakan ketika scan barcode)
   final int branchId;
   final String cGudang;
-  final bool showSaveButton; // Parameter untuk mengontrol tampilan tombol Simpan
 
   const ProductDetailPage({
     super.key,
-    required this.cKode,
+    this.cKode, // Optional: null jika dari scan barcode
+    this.cKodebar, // Optional: jika tidak disediakan, akan menggunakan cKode
     required this.branchId,
     required this.cGudang,
-    this.showSaveButton = false, // Default false, hanya true saat dari scan
   });
 
   @override
@@ -35,97 +36,26 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   void initState() {
     super.initState();
+    // Use the properly configured Dio client from DI with auth interceptor
     final repo = ProductRepository(
       remoteDataSource: ProductRemoteDataSource(
-        client: Dio(BaseOptions(baseUrl: 'https://dev.swalayanenakeco.com')),
+        client: locator<Dio>(),
       ),
     );
     _futureDetail = repo.fetchProductDetail(
       cKode: widget.cKode,
       branchId: widget.branchId,
       cGudang: widget.cGudang,
+      cKodebar: widget.cKodebar, // Gunakan cKodebar jika tersedia, jika tidak akan menggunakan cKode sebagai fallback
     );
+
+    // Catatan penggunaan parameter:
+    // - cKode: Digunakan ketika user mengklik produk dari list (menggunakan kode produk), null jika dari scan
+    // - cKodebar: Digunakan ketika user scan barcode (menggunakan value dari hasil scan)
+    // Prioritas: cKodebar > cKode > empty string
   }
 
-  void _showSaveFeatureDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.info_outline,
-                  color: Colors.orange,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Fitur Simpan',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Fitur simpan data produk belum tersedia saat ini.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF4A5568),
-                ),
-              ),
-              SizedBox(height: 12),
-              Text(
-                'Endpoint API untuk menyimpan data produk masih dalam pengembangan.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF718096),
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Fitur ini akan segera hadir dalam update mendatang.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF718096),
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                'Tutup',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF4A5568),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +256,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ),
                 ],
               ),
-              // Floating button
+              // Floating button - Scan Barcode
               Positioned(
                 left: 0,
                 right: 0,
@@ -335,71 +265,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   child: Container(
                     color: Colors.white,
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    child: widget.showSaveButton
-                        ? Row(
-                            children: [
-                              // Tombol Simpan
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    _showSaveFeatureDialog();
-                                  },
-                                  icon: const Icon(Icons.save_outlined),
-                                  label: const Text('Simpan'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 8,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              // Tombol Lanjutkan Scan Barcode
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () async {
-                                    final result = await Navigator.push<String?>(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => QRScannerPage(cGudang: widget.cGudang),
-                                      ),
-                                    );
-                                    if (result != null && result.isNotEmpty) {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => ProductDetailPage(
-                                            cKode: result,
-                                            branchId: widget.branchId,
-                                            cGudang: widget.cGudang,
-                                            showSaveButton: true, // Set true untuk scan berikutnya
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(Icons.qr_code_scanner_outlined),
-                                  label: const Text('Scan Lagi'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(AppConstants.primaryRed),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 8,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : SizedBox(
+                    child: SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
                               onPressed: () async {
@@ -414,10 +280,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => ProductDetailPage(
-                                        cKode: result,
+                                  cKode: null, // Null karena dari scan barcode
+                                  cKodebar: result, // Value dari hasil scan barcode
                                         branchId: widget.branchId,
                                         cGudang: widget.cGudang,
-                                        showSaveButton: true, // Set true untuk scan berikutnya
                                       ),
                                     ),
                                   );

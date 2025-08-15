@@ -22,14 +22,20 @@ class ProductRepository {
   }
 
   Future<List<ProductDetailModel>> fetchProductDetail({
-    required String cKode,
+    String? cKode,
     required int branchId,
     required String cGudang,
+    String? cKodebar,
   }) {
+    // Catatan penggunaan parameter:
+    // - cKode: Digunakan ketika user mengklik produk dari list (menggunakan kode produk), null jika dari scan
+    // - cKodebar: Digunakan ketika user scan barcode (menggunakan value dari hasil scan)
+    // Prioritas: cKodebar > cKode > empty string
     return remoteDataSource.fetchProductDetail(
       cKode: cKode,
       branchId: branchId,
       cGudang: cGudang,
+      cKodebar: cKodebar,
     );
   }
 }

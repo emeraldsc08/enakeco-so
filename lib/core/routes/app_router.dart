@@ -6,8 +6,10 @@ import '../../features/grs/presentation/pages/grs_list_page.dart';
 import '../../features/main_menu/presentation/pages/home_page.dart';
 import '../../features/permissions/presentation/pages/permissions_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/profile/presentation/pages/settings_page.dart';
 import '../../features/rsk/presentation/pages/rsk_list_page.dart';
 import '../../features/rtl/presentation/pages/product_information.dart';
+import '../../features/rtl/presentation/pages/qr_scanner_page.dart';
 import '../../features/rtl/presentation/pages/rtl_list_page.dart';
 import '../../features/rtl/presentation/pages/rtl_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
@@ -75,6 +77,12 @@ class AppRouter {
         path: '/rtl-list',
         name: 'rtl-list',
         builder: (context, state) => const RTLListPage(),
+      ),
+      // QR Scanner Route
+      GoRoute(
+        path: '/qr-scanner',
+        name: 'qr-scanner',
+        builder: (context, state) => const QRScannerPage(cGudang: 'RTL'),
       ),
       // GRS List Page
       GoRoute(
@@ -179,43 +187,7 @@ class AppRouter {
       GoRoute(
         path: '/settings',
         name: 'settings',
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Settings'),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => context.go('/home'),
-            ),
-          ),
-          body: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.settings_outlined,
-                  size: 80,
-                  color: Color(0xFF9F7AEA),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Coming Soon',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        builder: (context, state) => const SettingsPage(),
       ),
     ],
   );

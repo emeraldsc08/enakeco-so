@@ -7,12 +7,12 @@ import 'core/routes/app_router.dart';
 import 'core/themes/app_theme.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/main_menu/presentation/providers/main_menu_provider.dart';
+import 'features/shared/providers/product_list_provider.dart';
 import 'features/stock_opname/presentation/providers/stock_opname_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize dependency injection
   await di.init();
 
   runApp(const MyApp());
@@ -33,6 +33,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => di.locator<MainMenuProvider>(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => di.locator<ProductListProvider>(),
         ),
         ChangeNotifierProvider(
           create: (_) => GlobalBranchProvider(),

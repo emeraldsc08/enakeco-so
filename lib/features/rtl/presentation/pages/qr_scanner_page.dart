@@ -54,10 +54,10 @@ class _QRScannerPageState extends State<QRScannerPage> {
       context,
       MaterialPageRoute(
         builder: (context) => ProductDetailPage(
-          cKode: qrCode,
+          cKode: null, // Null karena dari scan barcode
+          cKodebar: qrCode, // Value dari hasil scan barcode
           branchId: branchId,
           cGudang: widget.cGudang,
-          showSaveButton: true, // Set true karena dibuka dari scan
         ),
       ),
     );

@@ -27,9 +27,18 @@ class AuthProvider extends ChangeNotifier {
 
     final isLoggedIn = await SessionService.isLoggedIn();
     if (isLoggedIn) {
-      _setAuthenticated(true);
-      // Load current user data
-      await _loadCurrentUser();
+      // Validate that encrypted_id exists
+      final encryptedId = await SessionService.getEncryptedId();
+      if (encryptedId != null && encryptedId.isNotEmpty) {
+        _setAuthenticated(true);
+        // Load current user data
+        await _loadCurrentUser();
+      } else {
+        // Session exists but no encrypted_id, clear session
+        print('[AUTH PROVIDER] Session exists but no encrypted_id found, clearing session');
+        await SessionService.clearSession();
+        _setAuthenticated(false);
+      }
     }
 
     _setLoading(false);
@@ -119,6 +128,22 @@ class AuthProvider extends ChangeNotifier {
   /// Clear error state
   void clearError() {
     _clearError();
+  }
+
+  /// Validate current session
+  Future<bool> validateSession() async {
+    final isLoggedIn = await SessionService.isLoggedIn();
+    if (!isLoggedIn) return false;
+
+    final encryptedId = await SessionService.getEncryptedId();
+    if (encryptedId == null || encryptedId.isEmpty) {
+      print('[AUTH PROVIDER] Session validation failed: no encrypted_id');
+      await logout();
+      return false;
+    }
+
+    print('[AUTH PROVIDER] Session validation successful');
+    return true;
   }
 
   void _setLoading(bool loading) {

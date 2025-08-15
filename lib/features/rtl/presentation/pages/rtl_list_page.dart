@@ -1,10 +1,7 @@
-import 'package:dio/dio.dart';
-import 'package:enakeco_so/core/constants/env.dart';
+import 'package:enakeco_so/core/di/injector.dart';
 import 'package:enakeco_so/core/models/branch_model.dart';
 import 'package:enakeco_so/core/providers/global_branch_provider.dart';
 import 'package:enakeco_so/core/widgets/branch_selector.dart';
-import 'package:enakeco_so/features/rtl/data/datasources/product_remote_datasource.dart';
-import 'package:enakeco_so/features/rtl/data/repositories/product_repository.dart';
 import 'package:enakeco_so/features/rtl/presentation/pages/product_detail_page.dart';
 import 'package:enakeco_so/features/shared/models/product_model.dart';
 import 'package:enakeco_so/features/shared/providers/product_list_provider.dart';
@@ -20,16 +17,13 @@ class RTLListPage extends StatelessWidget {
     return Consumer<GlobalBranchProvider>(
       builder: (context, globalBranchProvider, child) {
         return ChangeNotifierProvider(
-          create: (_) => ProductListProvider(
-            repository: ProductRepository(
-              remoteDataSource: ProductRemoteDataSource(
-                client: Dio(BaseOptions(baseUrl: Env.stockListBaseUrl)),
-              ),
-            ),
-          )
-            ..setCGudang('RTL')
-            ..setBranchId(globalBranchProvider.currentBranchId) // Use global branch ID
-            ..fetchProducts(), // Auto search on page load
+          create: (_) {
+            final provider = locator<ProductListProvider>(); // Use provider from DI
+            provider.setCGudang('RTL');
+            provider.setBranchId(globalBranchProvider.currentBranchId);
+            provider.fetchProducts(); // Auto search on page load
+            return provider;
+          },
           child: const _RTLListView(),
         );
       },
@@ -173,8 +167,55 @@ class _RTLListViewState extends State<_RTLListView> {
                 if (provider.error != null)
                   Expanded(
                     child: Center(
-                      child: Text('Error: ${provider.error}',
-                          style: const TextStyle(color: Colors.red)),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            provider.error!.contains('Sesi telah berakhir') || provider.error!.contains('401')
+                                ? Icons.login_outlined
+                                : Icons.error_outline,
+                            size: 64,
+                            color: provider.error!.contains('Sesi telah berakhir') || provider.error!.contains('401')
+                                ? Colors.orange
+                                : Colors.red,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            provider.error!,
+                            style: TextStyle(
+                              color: provider.error!.contains('Sesi telah berakhir') || provider.error!.contains('401')
+                                  ? Colors.orange
+                                  : Colors.red,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          if (provider.error!.contains('Sesi telah berakhir') || provider.error!.contains('401')) ...[
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => context.go('/login'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Login Kembali'),
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                provider.clearError();
+                                provider.fetchProducts(reset: true);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Coba Lagi'),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 if (!provider.isLoading &&
@@ -270,38 +311,145 @@ class _ProductTile extends StatelessWidget {
   final ProductModel product;
   const _ProductTile({required this.product});
 
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  IconData _getGudangIcon(String cGudang) {
+    switch (cGudang.toUpperCase()) {
+      case 'GRS':
+        return Icons.inbox_outlined;
+      case 'RTL':
+        return Icons.store_outlined;
+      case 'RSK':
+        return Icons.assignment_return_outlined;
+      default:
+        return Icons.warehouse_outlined;
+    }
+  }
+
+  Color _getGudangColor(String cGudang) {
+    return const Color(0xFF64748B); // Neutral gray for all gudang types
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<GlobalBranchProvider>(
       builder: (context, globalBranchProvider, child) {
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
+          elevation: 4,
+          shadowColor: Colors.black.withOpacity(0.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => ProductDetailPage(
-                    cKode: product.cKode,
+                    cKode: product.cKode, // Kode produk dari list
+                    // cKodebar tidak disediakan karena ini dari klik list, bukan scan
                     branchId: globalBranchProvider.currentBranchId,
                     cGudang: 'RTL',
-                    // showSaveButton tidak dikirim, akan menggunakan default false
                   ),
                 ),
               );
             },
-            leading: product.image != null
-                ? Image.network(product.image!, width: 48, height: 48, fit: BoxFit.cover)
-                : const Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
-            title: Text(product.cNama, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Kode: ${product.cKode}'),
-                Text('Gudang: ${product.cGudang}'),
-                Text(
-                    'Tgl Beli: ${product.dTglBeli.toLocal().toString().split(' ')[0]}'),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image (perkecil)
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: product.image != null
+                          ? Image.network(
+                              product.image!,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.image_not_supported, size: 25, color: Colors.grey),
+                            )
+                          : const Icon(Icons.image_not_supported, size: 25, color: Colors.grey),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Gudang info and product details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Gudang info (atas)
+                        Row(
+                          children: [
+                            Icon(
+                              _getGudangIcon(product.cGudang),
+                              size: 14,
+                              color: _getGudangColor(product.cGudang),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              product.cGudang,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: _getGudangColor(product.cGudang),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        // Nama Barang (tengah)
+                        Text(
+                          product.cNama,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A202C),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        // Kode (bawah)
+                        Text(
+                          product.cKode,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Date (kanan atas)
+                  Text(
+                    _formatDate(product.dTglBeli),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

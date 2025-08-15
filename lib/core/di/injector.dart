@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // Auth Feature
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
@@ -14,6 +13,10 @@ import '../../features/main_menu/data/repositories/main_menu_repository_impl.dar
 import '../../features/main_menu/domain/repositories/main_menu_repository.dart';
 import '../../features/main_menu/domain/usecases/get_dashboard_stats_usecase.dart';
 import '../../features/main_menu/presentation/providers/main_menu_provider.dart';
+// RTL Feature
+import '../../features/rtl/data/datasources/product_remote_datasource.dart';
+import '../../features/rtl/data/repositories/product_repository.dart';
+import '../../features/shared/providers/product_list_provider.dart';
 // Stock Opname Feature
 import '../../features/stock_opname/data/datasources/stock_opname_remote_datasource.dart';
 import '../../features/stock_opname/data/repositories/stock_opname_repository_impl.dart';
@@ -70,6 +73,9 @@ Future<void> init() async {
   locator.registerLazySingleton<MainMenuRemoteDataSource>(
     () => MainMenuRemoteDataSourceImpl(client: locator()),
   );
+  locator.registerLazySingleton<ProductRemoteDataSource>(
+    () => ProductRemoteDataSource(client: locator()),
+  );
 
   // Repositories
   locator.registerLazySingleton<AuthRepository>(
@@ -80,6 +86,9 @@ Future<void> init() async {
   );
   locator.registerLazySingleton<MainMenuRepository>(
     () => MainMenuRepositoryImpl(locator()),
+  );
+  locator.registerLazySingleton<ProductRepository>(
+    () => ProductRepository(remoteDataSource: locator()),
   );
 
   // Use cases
@@ -105,8 +114,9 @@ Future<void> init() async {
       locator<GetDashboardStatsUseCase>(),
     ),
   );
-
-  // Shared Preferences
-  final sharedPreferences = await SharedPreferences.getInstance();
-  locator.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
+  locator.registerFactory(
+    () => ProductListProvider(
+      repository: locator<ProductRepository>(),
+    ),
+  );
 }
