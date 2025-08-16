@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/helpers/navigation_helper.dart';
+import 'qr_scanner_page.dart';
+import 'rtl_page.dart';
 
 class ProductInformationPage extends StatelessWidget {
   final String qrCode;
@@ -25,7 +27,10 @@ class ProductInformationPage extends StatelessWidget {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 20),
-          onPressed: () => context.go('/rtl'),
+          onPressed: () => toDetailandPushReplacement(
+            context,
+            page: const RTLPage(),
+          ),
         ),
         centerTitle: true,
       ),
@@ -279,7 +284,10 @@ class ProductInformationPage extends StatelessWidget {
                     ],
                   ),
                   child: ElevatedButton(
-                    onPressed: () => context.go('/qr-scanner'),
+                    onPressed: () => toDetail(
+                      context,
+                      page: const QRScannerPage(cGudang: 'RTL'),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       shadowColor: Colors.transparent,

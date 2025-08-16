@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/helpers/navigation_helper.dart';
+import '../../../main_menu/presentation/pages/home_page.dart';
+import '../../../permissions/presentation/pages/permissions_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -58,10 +60,16 @@ class _SplashPageState extends State<SplashPage>
     if (mounted) {
       if (isLoggedIn) {
         // User is logged in, go directly to home
-        context.go('/home');
+        toDetailandPushReplacement(
+          context,
+          page: const HomePage(),
+        );
       } else {
         // User is not logged in, go to permissions
-        context.go('/permissions');
+        toDetailandPushReplacement(
+          context,
+          page: const PermissionsPage(),
+        );
       }
     }
   }

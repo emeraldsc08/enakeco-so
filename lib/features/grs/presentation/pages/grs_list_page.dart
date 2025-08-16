@@ -1,17 +1,19 @@
 import 'package:dio/dio.dart';
 import 'package:enakeco_so/core/di/injector.dart';
+import 'package:enakeco_so/core/helpers/navigation_helper.dart';
 import 'package:enakeco_so/core/models/branch_model.dart';
 import 'package:enakeco_so/core/providers/global_branch_provider.dart';
 import 'package:enakeco_so/core/widgets/branch_selector.dart';
 import 'package:enakeco_so/features/rtl/data/datasources/product_remote_datasource.dart';
 import 'package:enakeco_so/features/rtl/data/repositories/product_repository.dart';
 import 'package:enakeco_so/features/rtl/presentation/pages/product_detail_page.dart';
-import 'package:enakeco_so/features/rtl/presentation/pages/qr_scanner_page.dart';
 import 'package:enakeco_so/features/shared/models/product_model.dart';
 import 'package:enakeco_so/features/shared/providers/product_list_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import '../../../main_menu/presentation/pages/home_page.dart';
+import '../../../rtl/presentation/pages/qr_scanner_page.dart';
 
 class GRSListPage extends StatelessWidget {
   const GRSListPage({super.key});
@@ -119,7 +121,10 @@ class _GRSListViewState extends State<_GRSListView> {
         title: const Text('Daftar Produk GRS'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/home'),
+                      onPressed: () => toDetailandPushReplacement(
+              context,
+              page: const HomePage(),
+            ),
         ),
       ),
       body: Stack(
@@ -219,12 +224,10 @@ class _GRSListViewState extends State<_GRSListView> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const QRScannerPage(cGudang: 'GRS'),
-                          ),
-                        );
+                        toDetail(
+              context,
+              page: const QRScannerPage(cGudang: 'GRS'),
+            );
                       },
                       icon: const Icon(Icons.qr_code_scanner_outlined),
                       label: const Text('Scan Barcode'),

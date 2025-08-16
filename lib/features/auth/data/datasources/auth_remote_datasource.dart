@@ -30,9 +30,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
         if (responseData['message'] == 'User berhasil login' && responseData['data'] != null) {
           final userData = responseData['data'];
+          
+          // Debug: Print user data from API
+          print('[AUTH API] User data from API: $userData');
+          print('[AUTH API] isAdmin value: ${userData['isAdmin']}');
 
           try {
             final user = UserModel.fromJson(userData);
+            
+            // Debug: Print parsed user data
+            print('[AUTH API] Parsed user - isAdmin: ${user.isAdmin}, username: ${user.cNamaus}');
 
             return BaseResponse.success(
               data: user,

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/helpers/navigation_helper.dart';
 import '../../../../core/models/branch_model.dart';
 import '../../../../core/providers/global_branch_provider.dart';
 import '../../../../core/widgets/branch_selector.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../grs/presentation/pages/grs_list_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
+import '../../../profile/presentation/pages/settings_page.dart';
+import '../../../rsk/presentation/pages/rsk_list_page.dart';
+import '../../../rtl/presentation/pages/rtl_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -96,101 +101,173 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             children: [
               const SizedBox(height: 20),
 
-              // Branch and Profile Section
+              // Logo Section
+              Image.asset(
+                'assets/images/enak-eco-logo.png',
+                height: 60,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 10),
+
+              // User & Branch Section
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      // Branch Selector
-                      Expanded(
-                        flex: 2,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(AppConstants.primaryRed),
+                          Color(AppConstants.secondaryRed),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(AppConstants.primaryRed)
+                              .withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          // User Profile Row
+                          Consumer<AuthProvider>(
+                            builder: (context, authProvider, child) {
+                              final currentUser = authProvider.currentUser;
+                              if (currentUser != null) {
+                                return Row(
+                                  children: [
+                                    // Profile Avatar
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // User Info
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            currentUser.cNamaus.isNotEmpty
+                                                ? currentUser.cNamaus
+                                                : 'User',
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  Colors.white.withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Colors.white
+                                                    .withOpacity(0.3),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              currentUser.isAdmin == 1
+                                                  ? 'Administrator'
+                                                  : 'Pengguna',
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Profile Button
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: IconButton(
+                                        onPressed: () => toDetail(
+                                          context,
+                                          page: const ProfilePage(),
+                                        ),
+                                        icon: const Icon(
+                                          Icons.settings_outlined,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                        padding: const EdgeInsets.all(8),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 32,
+                                          minHeight: 32,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
                           ),
-                          child: BranchSelector(
+                          const SizedBox(height: 16),
+                          // Divider
+                          Container(
+                            height: 1,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.white.withOpacity(0.3),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Branch Selector
+                          BranchSelector(
                             onBranchSelected: _onBranchSelected,
                             title: 'Pilih Cabang',
                             hintText: 'Cabang',
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      // Profile Button
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ProfilePage(),
-                              ),
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF667eea),
-                                      Color(0xFF764ba2)
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.person_outline,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Logo with modern styling
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                  child: Image.asset(
-                    'assets/images/enak-eco-logo.png',
-                    height: 100,
-                    fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
@@ -213,7 +290,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           const Color(0xFF667eea),
                           const Color(0xFF764ba2)
                         ],
-                        onTap: () => context.go('/rtl-list'),
+                        onTap: () => toDetail(
+                          context,
+                          page: const RTLListPage(),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       _buildModernMenuItem(
@@ -225,7 +305,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           const Color(0xFFf093fb),
                           const Color(0xFFf5576c)
                         ],
-                        onTap: () => context.go('/grs-list'),
+                        onTap: () => toDetail(
+                          context,
+                          page: const GRSListPage(),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       _buildModernMenuItem(
@@ -237,30 +320,46 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           const Color(0xFF4facfe),
                           const Color(0xFF00f2fe)
                         ],
-                        onTap: () => context.go('/rsk-list'),
+                        onTap: () => toDetail(
+                          context,
+                          page: const RSKListPage(),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
 
-              // Pengaturan akun di bawah dengan styling modern
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                  child: _buildModernMenuItem(
-                    context,
-                    title: 'Pengaturan Akun',
-                    subtitle: 'Profil dan preferensi',
-                    icon: Icons.settings_outlined,
-                    gradient: [
-                      const Color(0xFFfa709a),
-                      const Color(0xFFfee140)
-                    ],
-                    onTap: () => context.go('/settings'),
-                  ),
-                ),
+              // Pengaturan akun di bawah dengan styling modern - Hanya untuk Admin
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  // Hanya tampilkan jika user adalah admin
+                  if (authProvider.currentUser != null &&
+                      authProvider.currentUser!.isAdmin == 1) {
+                    return FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                        child: _buildModernMenuItem(
+                          context,
+                          title: 'Pengaturan Akun',
+                          subtitle: 'Profil dan preferensi',
+                          icon: Icons.settings_outlined,
+                          gradient: [
+                            const Color(0xFFfa709a),
+                            const Color(0xFFfee140)
+                          ],
+                          onTap: () => toDetail(
+                            context,
+                            page: const SettingsPage(),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  // Jika bukan admin, tidak tampilkan apa-apa
+                  return const SizedBox.shrink();
+                },
               ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:enakeco_so/core/di/injector.dart';
+import 'package:enakeco_so/core/helpers/navigation_helper.dart';
 import 'package:enakeco_so/core/models/branch_model.dart';
 import 'package:enakeco_so/core/providers/global_branch_provider.dart';
 import 'package:enakeco_so/core/widgets/branch_selector.dart';
@@ -6,8 +7,11 @@ import 'package:enakeco_so/features/rtl/presentation/pages/product_detail_page.d
 import 'package:enakeco_so/features/shared/models/product_model.dart';
 import 'package:enakeco_so/features/shared/providers/product_list_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import '../../../auth/presentation/pages/login_page.dart';
+import '../../../main_menu/presentation/pages/home_page.dart';
+import 'qr_scanner_page.dart';
 
 class RTLListPage extends StatelessWidget {
   const RTLListPage({super.key});
@@ -112,7 +116,10 @@ class _RTLListViewState extends State<_RTLListView> {
         title: const Text('Daftar Produk RTL'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/home'),
+                      onPressed: () => toDetailandPushReplacement(
+              context,
+              page: const HomePage(),
+            ),
         ),
       ),
       body: Stack(
@@ -193,7 +200,10 @@ class _RTLListViewState extends State<_RTLListView> {
                           if (provider.error!.contains('Sesi telah berakhir') || provider.error!.contains('401')) ...[
                             const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: () => context.go('/login'),
+                              onPressed: () => toDetailandRemoveUtil(
+              context,
+              page: const LoginPage(),
+            ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange,
                                 foregroundColor: Colors.white,
@@ -258,7 +268,10 @@ class _RTLListViewState extends State<_RTLListView> {
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () => context.go('/qr-scanner'),
+                      onPressed: () => toDetail(
+              context,
+              page: const QRScannerPage(cGudang: 'RTL'),
+            ),
                       icon: const Icon(Icons.qr_code_scanner_outlined),
                       label: const Text('Scan Barcode'),
                       style: ElevatedButton.styleFrom(

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/helpers/navigation_helper.dart';
 import '../../../../core/styles/app_styles.dart';
+import '../../../main_menu/presentation/pages/home_page.dart';
 import 'qr_scanner_page.dart';
 
 class RTLPage extends StatefulWidget {
@@ -39,7 +40,10 @@ class _RTLPageState extends State<RTLPage> {
         title: const Text('RTL (Toko)'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/home'),
+          onPressed: () => toDetailandPushReplacement(
+            context,
+            page: const HomePage(),
+          ),
         ),
         actions: [
           IconButton(
@@ -194,11 +198,9 @@ class RTLMenuBottomSheet extends StatelessWidget {
                   color: const Color(0xFFED8936),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
+                    toDetail(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const QRScannerPage(cGudang: 'RTL'),
-                      ),
+                      page: const QRScannerPage(cGudang: 'RTL'),
                     );
                   },
                 ),

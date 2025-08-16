@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/helpers/navigation_helper.dart';
 import '../../../../core/models/branch_model.dart';
 import '../../../../core/providers/global_branch_provider.dart';
 import '../../../../core/widgets/branch_selector.dart';
+import '../../../main_menu/presentation/pages/home_page.dart';
 
 class StockOpnameListPage extends StatefulWidget {
   const StockOpnameListPage({super.key});
@@ -44,7 +45,10 @@ class _StockOpnameListPageState extends State<StockOpnameListPage> {
             title: const Text('Stock Opname'),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () => context.go('/home'),
+              onPressed: () => toDetailandPushReplacement(
+                context,
+                page: const HomePage(),
+              ),
             ),
           ),
           body: Padding(

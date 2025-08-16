@@ -40,11 +40,26 @@ class SessionService {
   }
 
   static Future<void> clearSession() async {
-    final prefs = await SharedPreferences.getInstance();
+    print('[SESSION SERVICE] Starting session clear...');
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    await prefs.remove(_encryptedIdKey);
-    await prefs.remove(_userIdKey);
-    await prefs.remove(_usernameKey);
-    await prefs.setBool(_isLoggedInKey, false);
+      await prefs.remove(_encryptedIdKey);
+      print('[SESSION SERVICE] Removed encrypted_id');
+
+      await prefs.remove(_userIdKey);
+      print('[SESSION SERVICE] Removed user_id');
+
+      await prefs.remove(_usernameKey);
+      print('[SESSION SERVICE] Removed username');
+
+      await prefs.setBool(_isLoggedInKey, false);
+      print('[SESSION SERVICE] Set is_logged_in to false');
+
+      print('[SESSION SERVICE] Session clear completed successfully');
+    } catch (e) {
+      print('[SESSION SERVICE] Error clearing session: $e');
+      rethrow;
+    }
   }
 }

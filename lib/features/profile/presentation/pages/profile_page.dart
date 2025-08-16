@@ -1,46 +1,151 @@
+import 'package:enakeco_so/features/auth/presentation/pages/login_page.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/global_branch_provider.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
   Future<void> _logout(BuildContext context) async {
-    // Show confirmation dialog
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+    try {
+      // Show confirmation dialog
+      final shouldLogout = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(AppConstants.primaryRed),
-              foregroundColor: Colors.white,
+          title: const Row(
+            children: [
+              Icon(
+                Icons.logout,
+                color: Color(AppConstants.primaryRed),
+                size: 24,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Keluar',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Apakah Anda yakin ingin keluar dari aplikasi?',
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(
+                'Batal',
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(AppConstants.primaryRed),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Keluar',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 
-    if (shouldLogout == true && context.mounted) {
-      // Clear user session using auth provider
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.logout();
+      // If user confirmed logout, proceed with logout process
+      if (shouldLogout == true) {
+        print('[PROFILE] User confirmed logout, starting logout process...');
 
-      // Navigate to login
+        // Clear session directly
+        await SessionService.clearSession();
+        print('[PROFILE] Session cleared directly');
+
+        // Navigate immediately using multiple approaches
+        if (context.mounted) {
+          // Try multiple navigation approaches
+          try {
+            // Approach 1: Direct Navigator
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginPage()),
+              (route) => false,
+            );
+            print('[PROFILE] Navigation approach 1 completed');
+          } catch (e) {
+            print('[PROFILE] Navigation approach 1 failed: $e');
+
+            // Approach 2: Using context directly
+            try {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+                (route) => false,
+              );
+              print('[PROFILE] Navigation approach 2 completed');
+            } catch (e2) {
+              print('[PROFILE] Navigation approach 2 failed: $e2');
+
+              // Approach 3: Using MaterialApp navigator
+              try {
+                final navigator = Navigator.of(context, rootNavigator: true);
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  (route) => false,
+                );
+                print('[PROFILE] Navigation approach 3 completed');
+              } catch (e3) {
+                print('[PROFILE] All navigation approaches failed: $e3');
+                // Show error message
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text('Navigation failed. Please restart the app.'),
+                      backgroundColor: Color(AppConstants.primaryRed),
+                    ),
+                  );
+                }
+              }
+            }
+          }
+        } else {
+          print('[PROFILE] Context no longer mounted, cannot navigate');
+        }
+      }
+    } catch (e) {
+      print('[PROFILE] Error during logout: $e');
+      // Show error message to user
       if (context.mounted) {
-        context.go('/login');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error during logout: $e'),
+            backgroundColor: const Color(AppConstants.primaryRed),
+          ),
+        );
       }
     }
   }
@@ -74,11 +179,14 @@ class ProfilePage extends StatelessWidget {
             Icons.arrow_back_ios,
             color: Color(0xFF1A202C),
           ),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
+          print(
+              '[PROFILE] AuthProvider state - isLoading: ${authProvider.isLoading}, isAuthenticated: ${authProvider.isAuthenticated}, currentUser: ${authProvider.currentUser?.cNamaus ?? 'null'}');
+
           if (authProvider.isLoading) {
             return const Center(
               child: CircularProgressIndicator(
@@ -90,7 +198,24 @@ class ProfilePage extends StatelessWidget {
           final currentUser = authProvider.currentUser;
           if (currentUser == null) {
             return const Center(
-              child: Text('No user data available'),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.person_off,
+                    size: 64,
+                    color: Color(0xFF64748B),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Data pengguna tidak tersedia',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -116,7 +241,8 @@ class ProfilePage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(50),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(AppConstants.primaryRed).withOpacity(0.3),
+                              color: const Color(AppConstants.primaryRed)
+                                  .withOpacity(0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
@@ -129,32 +255,13 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        currentUser.cNamaus,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A202C),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        currentUser.isAdmin == 1 ? 'Administrator' : 'User',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 40),
-
                 // User Information Section
                 const Text(
-                  'User Information',
+                  'Informasi Pengguna',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -165,43 +272,52 @@ class ProfilePage extends StatelessWidget {
 
                 _buildInfoCard(
                   icon: Icons.person_outline,
-                  title: 'Username',
-                  value: currentUser.cNamaus,
+                  title: 'Nama Pengguna',
+                  value: currentUser.cNamaus.isNotEmpty
+                      ? currentUser.cNamaus
+                      : 'Tidak tersedia',
                   color: const Color(0xFF4299E1),
                 ),
                 const SizedBox(height: 12),
                 _buildInfoCard(
-                  icon: Icons.email_outlined,
-                  title: 'Email',
-                  value: '${currentUser.cNamaus}@enakeco.com',
-                  color: const Color(0xFF48BB78),
+                  icon: Icons.route_outlined,
+                  title: 'Role',
+                  value:
+                      currentUser.isAdmin == 1 ? 'Administrator' : 'Pengguna',
+                  color: const Color.fromARGB(255, 225, 164, 66),
                 ),
                 const SizedBox(height: 12),
                 _buildInfoCard(
                   icon: Icons.badge_outlined,
-                  title: 'User ID',
-                  value: currentUser.id.toString(),
+                  title: 'ID Pengguna',
+                  value: currentUser.id > 0
+                      ? currentUser.id.toString()
+                      : 'Tidak tersedia',
                   color: const Color(0xFFED8936),
                 ),
                 const SizedBox(height: 12),
                 _buildInfoCard(
                   icon: Icons.access_time_outlined,
-                  title: 'Login Time',
+                  title: 'Waktu Login',
                   value: _formatLoginTime(),
                   color: const Color(0xFF9F7AEA),
                 ),
                 const SizedBox(height: 12),
                 _buildInfoCard(
                   icon: Icons.group_outlined,
-                  title: 'Group',
-                  value: currentUser.cGroup,
+                  title: 'Grup',
+                  value: currentUser.cGroup.isNotEmpty
+                      ? currentUser.cGroup
+                      : 'Tidak tersedia',
                   color: const Color(0xFF38B2AC),
                 ),
                 const SizedBox(height: 12),
                 _buildInfoCard(
                   icon: Icons.store_outlined,
-                  title: 'Warehouse',
-                  value: currentUser.cGudang,
+                  title: 'Gudang',
+                  value: currentUser.cGudang.isNotEmpty
+                      ? currentUser.cGudang
+                      : 'Tidak tersedia',
                   color: const Color(0xFFF56565),
                 ),
 
@@ -209,7 +325,7 @@ class ProfilePage extends StatelessWidget {
 
                 // Branch Information Section
                 const Text(
-                  'Branch Information',
+                  'Informasi Cabang',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -220,21 +336,27 @@ class ProfilePage extends StatelessWidget {
 
                 Consumer<GlobalBranchProvider>(
                   builder: (context, globalBranchProvider, child) {
+                    final branchName = globalBranchProvider.currentBranchName;
+                    final branchId = globalBranchProvider.currentBranchId;
+
                     return Column(
                       children: [
-                        _buildInfoCard(
-                          icon: Icons.location_on_outlined,
-                          title: 'Active Branch',
-                          value: globalBranchProvider.currentBranchName,
-                          color: const Color(AppConstants.primaryRed),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInfoCard(
-                          icon: Icons.store_outlined,
-                          title: 'Branch ID',
-                          value: 'ID: ${globalBranchProvider.currentBranchId}',
-                          color: const Color(0xFF48BB78),
-                        ),
+                        if (branchName.isNotEmpty)
+                          _buildInfoCard(
+                            icon: Icons.location_on_outlined,
+                            title: 'Cabang Aktif',
+                            value: branchName,
+                            color: const Color(AppConstants.primaryRed),
+                          ),
+                        if (branchName.isNotEmpty && branchId > 0)
+                          const SizedBox(height: 12),
+                        if (branchId > 0)
+                          _buildInfoCard(
+                            icon: Icons.store_outlined,
+                            title: 'ID Cabang',
+                            value: branchId.toString(),
+                            color: const Color(0xFF48BB78),
+                          ),
                       ],
                     );
                   },
@@ -244,7 +366,7 @@ class ProfilePage extends StatelessWidget {
 
                 // App Information Section
                 const Text(
-                  'App Information',
+                  'Informasi Aplikasi',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -255,19 +377,19 @@ class ProfilePage extends StatelessWidget {
 
                 _buildInfoCard(
                   icon: Icons.info_outline,
-                  title: 'App Name',
+                  title: 'Nama Aplikasi',
                   value: 'EnakEco SO',
                   color: const Color(AppConstants.primaryRed),
                 ),
                 const SizedBox(height: 12),
                 _buildInfoCard(
                   icon: Icons.phone_android_outlined,
-                  title: 'Version',
+                  title: 'Versi',
                   value: AppConstants.appVersion,
                   color: const Color(0xFF48BB78),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
                 // Logout Button
                 Consumer<AuthProvider>(
@@ -276,19 +398,27 @@ class ProfilePage extends StatelessWidget {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton.icon(
-                        onPressed: authProvider.isLoading ? null : () => _logout(context),
+                        onPressed: authProvider.isLoading
+                            ? null
+                            : () {
+                                print('[PROFILE] Logout button pressed');
+                                _logout(context);
+                              },
                         icon: authProvider.isLoading
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
                                 ),
                               )
                             : const Icon(Icons.logout, size: 20),
                         label: Text(
-                          authProvider.isLoading ? 'Logging out...' : 'Logout',
+                          authProvider.isLoading
+                              ? 'Sedang keluar...'
+                              : 'Keluar',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

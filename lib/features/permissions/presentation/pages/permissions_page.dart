@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/helpers/navigation_helper.dart';
 import '../../../../core/styles/app_styles.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 
 class PermissionsPage extends StatefulWidget {
   const PermissionsPage({super.key});
@@ -82,7 +83,10 @@ class _PermissionsPageState extends State<PermissionsPage> {
     // Add a small delay to show the success state briefly
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
-        context.go('/login');
+        toDetailandPushReplacement(
+          context,
+          page: const LoginPage(),
+        );
       }
     });
   }
