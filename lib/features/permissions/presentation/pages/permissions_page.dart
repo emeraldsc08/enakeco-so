@@ -111,7 +111,7 @@ class _PermissionsPageState extends State<PermissionsPage> {
       case Permission.camera:
         return 'Required to scan QR codes and capture images';
       case Permission.location:
-        return 'Required to track store locations';
+        return 'Required to track stor e locations';
       default:
         return 'Required for app functionality';
     }

@@ -1,3 +1,4 @@
+import 'package:enakeco_so/features/stock_opname/presentation/pages/list_laporan_so_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,6 +13,7 @@ import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../profile/presentation/pages/settings_page.dart';
 import '../../../rsk/presentation/pages/rsk_list_page.dart';
 import '../../../rtl/presentation/pages/rtl_list_page.dart';
+import '../../../stock_opname/presentation/pages/stock_opname_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -324,6 +326,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           context,
                           page: const RSKListPage(),
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildModernMenuItem(
+                        context,
+                        title: 'Stock Opname',
+                        subtitle: 'Manajemen stock opname',
+                        icon: Icons.inventory_2_outlined,
+                        gradient: [
+                          const Color(0xFFa8edea),
+                          const Color(0xFFfed6e3)
+                        ],
+                        onTap: () =>
+                            toDetail(context, page: const ListLaporanSOPage()),
                       ),
                     ],
                   ),
