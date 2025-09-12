@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -24,9 +25,20 @@ class _CreateLaporanSOState extends State<CreateLaporanSO> {
   final List<String> _gudangOptions = ['GRS', 'RTL', 'RSK'];
 
   @override
+  void initState() {
+    super.initState();
+    _generateAjOnLoad();
+  }
+
+  @override
   void dispose() {
     _keteranganController.dispose();
     super.dispose();
+  }
+
+  Future<void> _generateAjOnLoad() async {
+    final provider = Provider.of<StockOpnameProvider>(context, listen: false);
+    await provider.generateAj();
   }
 
   void _handleTambahProduk() async {
@@ -198,6 +210,104 @@ class _CreateLaporanSOState extends State<CreateLaporanSO> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // AJ Number Field (auto-generated - view only)
+                    Consumer<StockOpnameProvider>(
+                      builder: (context, provider, child) {
+                        return _buildFormField(
+                          label: 'Nomor',
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppConstants.paddingMedium,
+                              vertical: AppConstants.paddingMedium,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(AppConstants.lightGray),
+                              borderRadius: BorderRadius.circular(
+                                  AppConstants.radiusMedium),
+                              border: Border.all(
+                                color: const Color(AppConstants.gray),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.confirmation_number_outlined,
+                                  color: Color(AppConstants.darkGray),
+                                  size: 20,
+                                ),
+                                const SizedBox(
+                                    width: AppConstants.paddingSmall),
+                                Expanded(
+                                  child: Text(
+                                    provider.generatedAj ?? 'Generating...',
+                                    style: TextStyle(
+                                      fontSize: AppConstants.fontSizeMedium,
+                                      color: provider.generatedAj != null
+                                          ? const Color(AppConstants.darkGray)
+                                          : const Color(AppConstants.gray),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                if (provider.isLoading)
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(AppConstants.primaryRed),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: AppConstants.paddingLarge),
+
+                    // Tanggal Field (static - today's date)
+                    _buildFormField(
+                      label: 'Tanggal',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppConstants.paddingMedium,
+                          vertical: AppConstants.paddingMedium,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(AppConstants.lightGray),
+                          borderRadius:
+                              BorderRadius.circular(AppConstants.radiusMedium),
+                          border: Border.all(
+                            color: const Color(AppConstants.gray),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today_outlined,
+                              color: Color(AppConstants.darkGray),
+                              size: 20,
+                            ),
+                            const SizedBox(width: AppConstants.paddingSmall),
+                            Text(
+                              DateFormat('dd/MM/yyyy').format(DateTime.now()),
+                              style: const TextStyle(
+                                fontSize: AppConstants.fontSizeMedium,
+                                color: Color(AppConstants.darkGray),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: AppConstants.paddingLarge),
+
                     // Gudang Field (moved to top)
                     _buildFormField(
                       label: 'Gudang',

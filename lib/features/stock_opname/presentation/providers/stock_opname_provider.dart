@@ -4,6 +4,7 @@ import '../../data/models/stock_opname_request_model.dart';
 import '../../domain/entities/laporan_penjualan_entity.dart';
 import '../../domain/entities/stock_opname_entity.dart';
 import '../../domain/usecases/create_stock_opname_usecase.dart';
+import '../../domain/usecases/generate_aj_usecase.dart';
 import '../../domain/usecases/get_list_so_usecase.dart';
 import '../../domain/usecases/get_stock_opname_list_usecase.dart';
 import '../../domain/usecases/save_stock_opname_usecase.dart';
@@ -13,23 +14,27 @@ class StockOpnameProvider extends ChangeNotifier {
   final CreateStockOpnameUseCase createStockOpnameUseCase;
   final GetListSOUseCase getListSOUseCase;
   final SaveStockOpnameUseCase saveStockOpnameUseCase;
+  final GenerateAjUseCase generateAjUseCase;
 
   StockOpnameProvider(
       this.getStockOpnameListUseCase,
       this.createStockOpnameUseCase,
       this.getListSOUseCase,
-      this.saveStockOpnameUseCase);
+      this.saveStockOpnameUseCase,
+      this.generateAjUseCase);
 
   bool _isLoading = false;
   List<StockOpnameEntity> _stockOpnameList = [];
   List<LaporanPenjualanEntity> _laporanPenjualanList = [];
   String? _error;
+  String? _generatedAj;
 
   bool get isLoading => _isLoading;
   List<StockOpnameEntity> get stockOpnameList => _stockOpnameList;
   List<LaporanPenjualanEntity> get laporanPenjualanList =>
       _laporanPenjualanList;
   String? get error => _error;
+  String? get generatedAj => _generatedAj;
 
   Future<bool> getStockOpnameList() async {
     _setLoading(true);
@@ -115,6 +120,37 @@ class StockOpnameProvider extends ChangeNotifier {
         print('Response: ${response.message}');
         print('=============================');
         _setLoading(false);
+        return true;
+      },
+    );
+  }
+
+  Future<bool> generateAj() async {
+    _setLoading(true);
+    _clearError();
+
+    print('=== PROVIDER GENERATE AJ REQUEST ===');
+    print('Generating AJ...');
+    print('===================================');
+
+    final result = await generateAjUseCase();
+
+    return result.fold(
+      (error) {
+        print('=== PROVIDER GENERATE AJ ERROR ===');
+        print('Error: $error');
+        print('=================================');
+        _setError(error);
+        _setLoading(false);
+        return false;
+      },
+      (response) {
+        print('=== PROVIDER GENERATE AJ SUCCESS ===');
+        print('Generated AJ: ${response.data}');
+        print('===================================');
+        _generatedAj = response.data;
+        _setLoading(false);
+        notifyListeners();
         return true;
       },
     );

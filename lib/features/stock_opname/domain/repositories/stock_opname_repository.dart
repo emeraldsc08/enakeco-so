@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import '../../data/models/aj_generation_response_model.dart';
 import '../../data/models/stock_opname_request_model.dart';
 import '../../data/models/stock_opname_response_model.dart';
 import '../entities/laporan_penjualan_entity.dart';
@@ -12,4 +13,5 @@ abstract class StockOpnameRepository {
   Future<Either<String, StockOpnameEntity>> updateStockOpname(StockOpnameEntity stockOpname);
   Future<Either<String, List<LaporanPenjualanEntity>>> getListSO(String tanggal);
   Future<Either<String, StockOpnameResponseModel>> saveStockOpname(StockOpnameRequestModel request);
+  Future<Either<String, AjGenerationResponseModel>> generateAj();
 }

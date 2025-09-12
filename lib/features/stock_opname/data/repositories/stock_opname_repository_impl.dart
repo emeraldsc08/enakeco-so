@@ -4,6 +4,7 @@ import '../../domain/entities/laporan_penjualan_entity.dart';
 import '../../domain/entities/stock_opname_entity.dart';
 import '../../domain/repositories/stock_opname_repository.dart';
 import '../datasources/stock_opname_remote_datasource.dart';
+import '../models/aj_generation_response_model.dart';
 import '../models/stock_opname_model.dart';
 import '../models/stock_opname_request_model.dart';
 import '../models/stock_opname_response_model.dart';
@@ -61,6 +62,16 @@ class StockOpnameRepositoryImpl implements StockOpnameRepository {
   @override
   Future<Either<String, StockOpnameResponseModel>> saveStockOpname(StockOpnameRequestModel request) async {
     final response = await remoteDataSource.saveStockOpname(request);
+    if (response.success && response.data != null) {
+      return Right(response.data!);
+    } else {
+      return Left(response.message);
+    }
+  }
+
+  @override
+  Future<Either<String, AjGenerationResponseModel>> generateAj() async {
+    final response = await remoteDataSource.generateAj();
     if (response.success && response.data != null) {
       return Right(response.data!);
     } else {

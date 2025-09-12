@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/network/base_response.dart';
 import '../../domain/entities/stock_opname_entity.dart';
+import '../models/aj_generation_response_model.dart';
 import '../models/laporan_penjualan_model.dart';
 import '../models/stock_opname_model.dart';
 import '../models/stock_opname_request_model.dart';
@@ -14,6 +15,7 @@ abstract class StockOpnameRemoteDataSource {
   Future<BaseResponse<List<LaporanPenjualanModel>>> getListSO(String tanggal);
   Future<BaseResponse<StockOpnameResponseModel>> saveStockOpname(
       StockOpnameRequestModel request);
+  Future<BaseResponse<AjGenerationResponseModel>> generateAj();
 }
 
 class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
@@ -174,6 +176,52 @@ class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
       print('Exception: $e');
       print('Exception Type: ${e.runtimeType}');
       print('====================');
+      return BaseResponse.error(message: e.toString());
+    }
+  }
+
+  @override
+  Future<BaseResponse<AjGenerationResponseModel>> generateAj() async {
+    try {
+      print('=== AJ GENERATION REQUEST ===');
+      print('URL: /api/stock/generate-aj');
+      print('Method: GET');
+      print('=============================');
+
+      final response = await client.get('/api/stock/generate-aj');
+
+      print('=== AJ GENERATION RESPONSE ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      print('==============================');
+
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+
+        if (responseData['message'] != null && responseData['data'] != null) {
+          final AjGenerationResponseModel responseModel = AjGenerationResponseModel.fromJson(responseData);
+          return BaseResponse.success(data: responseModel);
+        } else {
+          print('=== AJ GENERATION ERROR (Missing data) ===');
+          print('Response: $responseData');
+          print('=========================================');
+          return BaseResponse.error(message: 'Invalid response format');
+        }
+      } else {
+        print('=== AJ GENERATION ERROR (Status != 200) ===');
+        print('Status Code: ${response.statusCode}');
+        print('Response: ${response.data}');
+        print('==========================================');
+        return BaseResponse.error(
+          message: 'Failed to generate AJ',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      print('=== AJ GENERATION EXCEPTION ===');
+      print('Exception: $e');
+      print('Exception Type: ${e.runtimeType}');
+      print('==============================');
       return BaseResponse.error(message: e.toString());
     }
   }
