@@ -4,11 +4,16 @@ import '../../../../core/network/base_response.dart';
 import '../../domain/entities/stock_opname_entity.dart';
 import '../models/laporan_penjualan_model.dart';
 import '../models/stock_opname_model.dart';
+import '../models/stock_opname_request_model.dart';
+import '../models/stock_opname_response_model.dart';
 
 abstract class StockOpnameRemoteDataSource {
   Future<BaseResponse<List<StockOpnameModel>>> getStockOpnameList();
-  Future<BaseResponse<StockOpnameModel>> createStockOpname(StockOpnameModel stockOpname);
+  Future<BaseResponse<StockOpnameModel>> createStockOpname(
+      StockOpnameModel stockOpname);
   Future<BaseResponse<List<LaporanPenjualanModel>>> getListSO(String tanggal);
+  Future<BaseResponse<StockOpnameResponseModel>> saveStockOpname(
+      StockOpnameRequestModel request);
 }
 
 class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
@@ -57,7 +62,8 @@ class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
   }
 
   @override
-  Future<BaseResponse<StockOpnameModel>> createStockOpname(StockOpnameModel stockOpname) async {
+  Future<BaseResponse<StockOpnameModel>> createStockOpname(
+      StockOpnameModel stockOpname) async {
     try {
       // Dummy implementation
       await Future.delayed(const Duration(seconds: 1));
@@ -83,7 +89,8 @@ class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
   }
 
   @override
-  Future<BaseResponse<List<LaporanPenjualanModel>>> getListSO(String tanggal) async {
+  Future<BaseResponse<List<LaporanPenjualanModel>>> getListSO(
+      String tanggal) async {
     try {
       final response = await client.get(
         '/api/stock/list-so',
@@ -95,7 +102,8 @@ class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
       if (response.statusCode == 200) {
         final responseData = response.data;
 
-        if (responseData['message'] == 'Success' && responseData['data'] != null) {
+        if (responseData['message'] == 'Success' &&
+            responseData['data'] != null) {
           final List<dynamic> dataList = responseData['data'];
           final List<LaporanPenjualanModel> laporanList = dataList
               .map((item) => LaporanPenjualanModel.fromJson(item))
@@ -103,7 +111,8 @@ class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
 
           return BaseResponse.success(data: laporanList);
         } else {
-          return BaseResponse.error(message: responseData['message'] ?? 'Failed to fetch data');
+          return BaseResponse.error(
+              message: responseData['message'] ?? 'Failed to fetch data');
         }
       } else {
         return BaseResponse.error(
@@ -112,6 +121,59 @@ class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
         );
       }
     } catch (e) {
+      return BaseResponse.error(message: e.toString());
+    }
+  }
+
+  @override
+  Future<BaseResponse<StockOpnameResponseModel>> saveStockOpname(
+      StockOpnameRequestModel request) async {
+    try {
+      print('=== API REQUEST ===');
+      print('URL: /api/stock/opname');
+      print('Method: POST');
+      print('Request Body: ${request.toJson()}');
+      print('==================');
+
+      final response = await client.post(
+        '/api/stock/opname',
+        data: request.toJson(),
+      );
+
+      print('=== API RESPONSE ===');
+      print('Status Code: ${response.statusCode}');
+      print('Response Data: ${response.data}');
+      print('===================');
+
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+
+        if (responseData['message'] == 'Success') {
+          final StockOpnameResponseModel responseModel =
+              StockOpnameResponseModel.fromJson(responseData);
+          return BaseResponse.success(data: responseModel);
+        } else {
+          print('=== API ERROR (Success=false) ===');
+          print('Message: ${responseData['message']}');
+          print('=================================');
+          return BaseResponse.error(
+              message: responseData['message'] ?? 'Failed to save data');
+        }
+      } else {
+        print('=== API ERROR (Status != 200) ===');
+        print('Status Code: ${response.statusCode}');
+        print('Response: ${response.data}');
+        print('=================================');
+        return BaseResponse.error(
+          message: 'Failed to save data',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      print('=== API EXCEPTION ===');
+      print('Exception: $e');
+      print('Exception Type: ${e.runtimeType}');
+      print('====================');
       return BaseResponse.error(message: e.toString());
     }
   }

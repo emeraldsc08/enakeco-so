@@ -1,4 +1,3 @@
-import 'package:enakeco_so/core/helpers/navigation_helper.dart';
 import 'package:enakeco_so/features/stock_opname/presentation/pages/create_laporan_so.dart';
 import 'package:enakeco_so/features/stock_opname/presentation/pages/list_laporan_so_view.dart';
 import 'package:flutter/material.dart';
@@ -250,11 +249,18 @@ class _ListLaporanSOPageState extends State<ListLaporanSOPage> {
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              toDetailandPushReplacement(
+            onPressed: () async {
+              final result = await Navigator.push<bool>(
                 context,
-                page: const CreateLaporanSO(),
+                MaterialPageRoute(
+                  builder: (context) => const CreateLaporanSO(),
+                ),
               );
+
+              // Refresh the list if data was saved
+              if (result == true) {
+                _loadLaporanSOData();
+              }
             },
             backgroundColor: const Color(AppConstants.primaryRed),
             child: const Icon(

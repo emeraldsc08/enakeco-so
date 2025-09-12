@@ -24,6 +24,7 @@ import '../../features/stock_opname/domain/repositories/stock_opname_repository.
 import '../../features/stock_opname/domain/usecases/create_stock_opname_usecase.dart';
 import '../../features/stock_opname/domain/usecases/get_list_so_usecase.dart';
 import '../../features/stock_opname/domain/usecases/get_stock_opname_list_usecase.dart';
+import '../../features/stock_opname/domain/usecases/save_stock_opname_usecase.dart';
 import '../../features/stock_opname/presentation/providers/stock_opname_provider.dart';
 import '../constants/env.dart';
 import '../network/auth_interceptor.dart';
@@ -97,6 +98,7 @@ Future<void> init() async {
   locator.registerLazySingleton(() => GetStockOpnameListUseCase(locator()));
   locator.registerLazySingleton(() => CreateStockOpnameUseCase(locator()));
   locator.registerLazySingleton(() => GetListSOUseCase(locator()));
+  locator.registerLazySingleton(() => SaveStockOpnameUseCase(locator()));
   locator.registerLazySingleton(() => GetDashboardStatsUseCase(locator()));
 
   // Providers
@@ -110,6 +112,7 @@ Future<void> init() async {
       locator<GetStockOpnameListUseCase>(),
       locator<CreateStockOpnameUseCase>(),
       locator<GetListSOUseCase>(),
+      locator<SaveStockOpnameUseCase>(),
     ),
   );
   locator.registerFactory(

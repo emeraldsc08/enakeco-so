@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../shared/models/product_detail_model.dart';
+import '../../data/models/stock_opname_request_model.dart';
+import '../providers/stock_opname_provider.dart';
 import 'add_product_form_page.dart';
 
 class CreateLaporanSO extends StatefulWidget {
@@ -16,7 +18,6 @@ class _CreateLaporanSOState extends State<CreateLaporanSO> {
   final _formKey = GlobalKey<FormState>();
   final _keteranganController = TextEditingController();
 
-  DateTime _selectedDate = DateTime.now();
   String? _selectedGudang;
   final List<ProductDetailModel> _addedProducts = [];
 
@@ -26,34 +27,6 @@ class _CreateLaporanSOState extends State<CreateLaporanSO> {
   void dispose() {
     _keteranganController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(AppConstants.primaryRed),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
   }
 
   void _handleTambahProduk() async {
@@ -90,7 +63,7 @@ class _CreateLaporanSOState extends State<CreateLaporanSO> {
     }
   }
 
-  void _handleSimpan() {
+  Future<void> _handleSimpan() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedGudang == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -102,33 +75,95 @@ class _CreateLaporanSOState extends State<CreateLaporanSO> {
         return;
       }
 
-      // Prepare data for saving
-      final laporanData = {
-        'nomor': 'SO-${DateFormat('yyyyMMdd').format(DateTime.now())}-001',
-        'tanggal': DateFormat('yyyy-MM-dd').format(_selectedDate),
-        'keterangan': _keteranganController.text.trim(),
-        'gudang': _selectedGudang,
-        'produk': _addedProducts
-            .map((product) => {
-                  'kode': product.cKode,
-                  'nama': product.cNama,
-                  'barcode': product.cKodebar,
-                  'kuantitas': product.qty1,
-                  'satuan': product.cSat1,
-                  'gudang': product.cGudang,
-                })
+      if (_addedProducts.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tambahkan minimal satu produk'),
+            backgroundColor: Color(AppConstants.primaryRed),
+          ),
+        );
+        return;
+      }
+
+      // Prepare data for API request
+      final request = StockOpnameRequestModel(
+        cGudang: _selectedGudang ?? '',
+        cKeterangan: _keteranganController.text.trim(),
+        details: _addedProducts
+            .map((product) => StockOpnameDetailModel(
+                  cKode: product.cKode,
+                  nQty1: product.qty1,
+                  nQty2: product.qty2,
+                  nQty3: product.qty3,
+                ))
             .toList(),
-      };
+      );
+      print('Request $request');
 
-      print('Laporan SO Data: $laporanData');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Data berhasil disimpan dengan ${_addedProducts.length} produk'),
-          backgroundColor: const Color(0xFF48BB78),
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(
+            color: Color(AppConstants.primaryRed),
+          ),
         ),
       );
+
+      try {
+        final provider =
+            Provider.of<StockOpnameProvider>(context, listen: false);
+        final success = await provider.saveStockOpname(request);
+
+        // Hide loading
+        Navigator.of(context).pop();
+
+        if (success) {
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Data berhasil disimpan'),
+              backgroundColor: Color(0xFF48BB78),
+            ),
+          );
+
+          // Navigate back to list and refresh
+          Navigator.of(context)
+              .pop(true); // Return true to indicate refresh needed
+        } else {
+          // Print error for debugging
+          print('=== SAVE ERROR ===');
+          print('Provider Error: ${provider.error}');
+          print('==================');
+
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.error ?? 'Gagal menyimpan data'),
+              backgroundColor: const Color(AppConstants.primaryRed),
+            ),
+          );
+        }
+      } catch (e) {
+        // Hide loading
+        Navigator.of(context).pop();
+
+        // Print error for debugging
+        print('=== EXCEPTION ERROR ===');
+        print('Exception: $e');
+        print('Exception Type: ${e.runtimeType}');
+        print('Stack Trace: ${StackTrace.current}');
+        print('=======================');
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(AppConstants.primaryRed),
+          ),
+        );
+      }
     }
   }
 
@@ -163,134 +198,7 @@ class _CreateLaporanSOState extends State<CreateLaporanSO> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Nomor Field (Read-only)
-                    _buildFormField(
-                      label: 'Nomor',
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppConstants.paddingMedium,
-                          vertical: AppConstants.paddingMedium,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(AppConstants.lightGray),
-                          borderRadius:
-                              BorderRadius.circular(AppConstants.radiusMedium),
-                          border: Border.all(
-                            color: const Color(AppConstants.gray),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.tag_outlined,
-                              color: Color(AppConstants.darkGray),
-                              size: 20,
-                            ),
-                            const SizedBox(width: AppConstants.paddingSmall),
-                            Text(
-                              'SO-${DateFormat('yyyyMMdd').format(DateTime.now())}-001',
-                              style: const TextStyle(
-                                fontSize: AppConstants.fontSizeMedium,
-                                color: Color(AppConstants.darkGray),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: AppConstants.paddingLarge),
-
-                    // Tanggal Field
-                    _buildFormField(
-                      label: 'Tanggal',
-                      child: InkWell(
-                        onTap: () => _selectDate(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppConstants.paddingMedium,
-                            vertical: AppConstants.paddingMedium,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: const Color(AppConstants.gray),
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(
-                                AppConstants.radiusMedium),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.calendar_today_outlined,
-                                color: Color(AppConstants.darkGray),
-                                size: 20,
-                              ),
-                              const SizedBox(width: AppConstants.paddingSmall),
-                              Text(
-                                DateFormat('dd/MM/yyyy').format(_selectedDate),
-                                style: const TextStyle(
-                                  fontSize: AppConstants.fontSizeMedium,
-                                  color: Color(AppConstants.darkGray),
-                                ),
-                              ),
-                              const Spacer(),
-                              const Icon(
-                                Icons.keyboard_arrow_down,
-                                color: Color(AppConstants.darkGray),
-                                size: 20,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: AppConstants.paddingLarge),
-
-                    // Keterangan Field
-                    _buildFormField(
-                      label: 'Keterangan',
-                      child: TextFormField(
-                        controller: _keteranganController,
-                        maxLines: 3,
-                        decoration: InputDecoration(
-                          hintText: 'Masukkan keterangan laporan...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppConstants.radiusMedium),
-                            borderSide: const BorderSide(
-                                color: Color(AppConstants.gray)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppConstants.radiusMedium),
-                            borderSide: const BorderSide(
-                                color: Color(AppConstants.gray)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppConstants.radiusMedium),
-                            borderSide: const BorderSide(
-                                color: Color(AppConstants.primaryRed)),
-                          ),
-                          contentPadding:
-                              const EdgeInsets.all(AppConstants.paddingMedium),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Keterangan tidak boleh kosong';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: AppConstants.paddingLarge),
-
-                    // Gudang Field
+                    // Gudang Field (moved to top)
                     _buildFormField(
                       label: 'Gudang',
                       child: DropdownButtonFormField<String>(
@@ -349,6 +257,41 @@ class _CreateLaporanSOState extends State<CreateLaporanSO> {
                           }
                           return null;
                         },
+                      ),
+                    ),
+
+                    const SizedBox(height: AppConstants.paddingLarge),
+
+                    // Keterangan Field (moved to bottom)
+                    _buildFormField(
+                      label: 'Keterangan (Opsional)',
+                      child: TextFormField(
+                        controller: _keteranganController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: 'Masukkan keterangan laporan (opsional)...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.radiusMedium),
+                            borderSide: const BorderSide(
+                                color: Color(AppConstants.gray)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.radiusMedium),
+                            borderSide: const BorderSide(
+                                color: Color(AppConstants.gray)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                                AppConstants.radiusMedium),
+                            borderSide: const BorderSide(
+                                color: Color(AppConstants.primaryRed)),
+                          ),
+                          contentPadding:
+                              const EdgeInsets.all(AppConstants.paddingMedium),
+                        ),
+                        // Keterangan is optional, no validation needed
                       ),
                     ),
                   ],

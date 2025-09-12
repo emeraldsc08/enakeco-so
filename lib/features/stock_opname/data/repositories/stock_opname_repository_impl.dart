@@ -5,6 +5,8 @@ import '../../domain/entities/stock_opname_entity.dart';
 import '../../domain/repositories/stock_opname_repository.dart';
 import '../datasources/stock_opname_remote_datasource.dart';
 import '../models/stock_opname_model.dart';
+import '../models/stock_opname_request_model.dart';
+import '../models/stock_opname_response_model.dart';
 
 class StockOpnameRepositoryImpl implements StockOpnameRepository {
   final StockOpnameRemoteDataSource remoteDataSource;
@@ -51,6 +53,16 @@ class StockOpnameRepositoryImpl implements StockOpnameRepository {
     if (response.success && response.data != null) {
       final entities = response.data!.map((model) => model.toEntity()).toList();
       return Right(entities);
+    } else {
+      return Left(response.message);
+    }
+  }
+
+  @override
+  Future<Either<String, StockOpnameResponseModel>> saveStockOpname(StockOpnameRequestModel request) async {
+    final response = await remoteDataSource.saveStockOpname(request);
+    if (response.success && response.data != null) {
+      return Right(response.data!);
     } else {
       return Left(response.message);
     }

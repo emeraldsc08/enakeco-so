@@ -51,8 +51,8 @@ class _QRScannerPageState extends State<QRScannerPage> {
   void _handleQRResult(String qrCode) {
     if (widget.returnToCaller) {
       // Return to the calling page with the scanned barcode
-      Navigator.pop(context, '182052'); // TODO: Remove this
-      // Navigator.pop(context, qrCode);
+
+      Navigator.pop(context, qrCode);
     } else {
       // Get current branch ID from GlobalBranchProvider
       final globalBranchProvider =

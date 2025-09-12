@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 
+import '../../data/models/stock_opname_request_model.dart';
 import '../../domain/entities/laporan_penjualan_entity.dart';
 import '../../domain/entities/stock_opname_entity.dart';
 import '../../domain/usecases/create_stock_opname_usecase.dart';
 import '../../domain/usecases/get_list_so_usecase.dart';
 import '../../domain/usecases/get_stock_opname_list_usecase.dart';
+import '../../domain/usecases/save_stock_opname_usecase.dart';
 
 class StockOpnameProvider extends ChangeNotifier {
   final GetStockOpnameListUseCase getStockOpnameListUseCase;
   final CreateStockOpnameUseCase createStockOpnameUseCase;
   final GetListSOUseCase getListSOUseCase;
+  final SaveStockOpnameUseCase saveStockOpnameUseCase;
 
-  StockOpnameProvider(this.getStockOpnameListUseCase, this.createStockOpnameUseCase, this.getListSOUseCase);
+  StockOpnameProvider(
+      this.getStockOpnameListUseCase,
+      this.createStockOpnameUseCase,
+      this.getListSOUseCase,
+      this.saveStockOpnameUseCase);
 
   bool _isLoading = false;
   List<StockOpnameEntity> _stockOpnameList = [];
@@ -20,7 +27,8 @@ class StockOpnameProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   List<StockOpnameEntity> get stockOpnameList => _stockOpnameList;
-  List<LaporanPenjualanEntity> get laporanPenjualanList => _laporanPenjualanList;
+  List<LaporanPenjualanEntity> get laporanPenjualanList =>
+      _laporanPenjualanList;
   String? get error => _error;
 
   Future<bool> getStockOpnameList() async {
@@ -77,6 +85,35 @@ class StockOpnameProvider extends ChangeNotifier {
       },
       (laporanList) {
         _setLaporanPenjualanList(laporanList);
+        _setLoading(false);
+        return true;
+      },
+    );
+  }
+
+  Future<bool> saveStockOpname(StockOpnameRequestModel request) async {
+    _setLoading(true);
+    _clearError();
+
+    print('=== PROVIDER SAVE REQUEST ===');
+    print('Request: ${request.toJson()}');
+    print('=============================');
+
+    final result = await saveStockOpnameUseCase(request);
+
+    return result.fold(
+      (error) {
+        print('=== PROVIDER SAVE ERROR ===');
+        print('Error: $error');
+        print('===========================');
+        _setError(error);
+        _setLoading(false);
+        return false;
+      },
+      (response) {
+        print('=== PROVIDER SAVE SUCCESS ===');
+        print('Response: ${response.message}');
+        print('=============================');
         _setLoading(false);
         return true;
       },
