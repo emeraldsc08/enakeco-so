@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import '../../domain/entities/laporan_penjualan_entity.dart';
 import '../../domain/entities/stock_opname_entity.dart';
 import '../../domain/repositories/stock_opname_repository.dart';
 import '../datasources/stock_opname_remote_datasource.dart';
@@ -42,5 +43,16 @@ class StockOpnameRepositoryImpl implements StockOpnameRepository {
   Future<Either<String, StockOpnameEntity>> updateStockOpname(StockOpnameEntity stockOpname) async {
     // Dummy implementation
     return const Left('Not implemented');
+  }
+
+  @override
+  Future<Either<String, List<LaporanPenjualanEntity>>> getListSO(String tanggal) async {
+    final response = await remoteDataSource.getListSO(tanggal);
+    if (response.success && response.data != null) {
+      final entities = response.data!.map((model) => model.toEntity()).toList();
+      return Right(entities);
+    } else {
+      return Left(response.message);
+    }
   }
 }

@@ -1,11 +1,12 @@
+import 'package:enakeco_so/core/helpers/navigation_helper.dart';
+import 'package:enakeco_so/features/stock_opname/presentation/pages/create_laporan_so.dart';
 import 'package:enakeco_so/features/stock_opname/presentation/pages/list_laporan_so_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/global_branch_provider.dart';
-import '../../data/models/barang_model.dart';
-import '../../data/models/laporan_penjualan_model.dart';
+import '../providers/stock_opname_provider.dart';
 
 class ListLaporanSOPage extends StatefulWidget {
   const ListLaporanSOPage({super.key});
@@ -16,7 +17,6 @@ class ListLaporanSOPage extends StatefulWidget {
 
 class _ListLaporanSOPageState extends State<ListLaporanSOPage> {
   DateTime _selectedDate = DateTime.now();
-  List<LaporanPenjualanModel> _laporanPenjualanList = [];
 
   @override
   void initState() {
@@ -24,45 +24,10 @@ class _ListLaporanSOPageState extends State<ListLaporanSOPage> {
     _loadLaporanSOData();
   }
 
-  void _loadLaporanSOData() {
-    // Mock data - replace with actual API call
-    setState(() {
-      _laporanPenjualanList = [
-        LaporanPenjualanModel(
-          noJual: 'JL-250800001',
-          listBarang: [
-            BarangModel(
-              barangId: 'BMGPA1',
-              namaBarang: 'Gula Putih \'A',
-              jumlahBarang: '1 KG',
-              price: 7720,
-              qty: -1,
-            ),
-            BarangModel(
-              barangId: 'BMGPA2',
-              namaBarang: 'Gula Putih \'A',
-              jumlahBarang: '1 KG',
-              price: 7720,
-              qty: 2,
-            ),
-          ],
-          subTotal: 7720,
-        ),
-        LaporanPenjualanModel(
-          noJual: 'JL-250800002',
-          listBarang: [
-            BarangModel(
-              barangId: 'BMGPA1',
-              namaBarang: 'Gula Putih \'A',
-              jumlahBarang: '1 KG',
-              price: 7720,
-              qty: -1,
-            ),
-          ],
-          subTotal: 7720,
-        ),
-      ];
-    });
+  Future<void> _loadLaporanSOData() async {
+    final provider = Provider.of<StockOpnameProvider>(context, listen: false);
+    final tanggal = _formatDateForAPI(_selectedDate);
+    await provider.getListSO(tanggal);
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -97,10 +62,14 @@ class _ListLaporanSOPageState extends State<ListLaporanSOPage> {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
+  String _formatDateForAPI(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<GlobalBranchProvider>(
-      builder: (context, globalBranchProvider, child) {
+    return Consumer2<GlobalBranchProvider, StockOpnameProvider>(
+      builder: (context, globalBranchProvider, stockOpnameProvider, child) {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Laporan Penjualan Per No Jual'),
@@ -195,62 +164,102 @@ class _ListLaporanSOPageState extends State<ListLaporanSOPage> {
 
                 // List Content
                 Expanded(
-                  child: _laporanPenjualanList.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inventory_2_outlined,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Tidak ada data laporan penjualan',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'untuk tanggal ${_formatDate(_selectedDate)}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
+                  child: stockOpnameProvider.isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(AppConstants.primaryRed),
                           ),
                         )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _laporanPenjualanList.length,
-                          itemBuilder: (context, index) {
-                            final item = _laporanPenjualanList[index];
-                            return ListLaporanSOView(laporanPenjualan: item);
-                          },
-                        ),
+                      : stockOpnameProvider.error != null
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    size: 64,
+                                    color: Colors.red[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Error: ${stockOpnameProvider.error}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.red[600],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: _loadLaporanSOData,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          const Color(AppConstants.primaryRed),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Coba Lagi'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : stockOpnameProvider.laporanPenjualanList.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.inventory_2_outlined,
+                                        size: 64,
+                                        color: Colors.grey[400],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Tidak ada data laporan penjualan',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'untuk tanggal ${_formatDate(_selectedDate)}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[500],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.fromLTRB(
+                                      16, 0, 16, 80), // Bottom padding for FAB
+                                  itemCount: stockOpnameProvider
+                                      .laporanPenjualanList.length,
+                                  itemBuilder: (context, index) {
+                                    final item = stockOpnameProvider
+                                        .laporanPenjualanList[index];
+                                    return ListLaporanSOView(
+                                        laporanPenjualan: item);
+                                  },
+                                ),
                 ),
               ],
             ),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                      'Fitur tambah laporan penjualan akan segera tersedia'),
-                  backgroundColor: Color(AppConstants.primaryRed),
-                ),
+              toDetailandPushReplacement(
+                context,
+                page: const CreateLaporanSO(),
               );
             },
             backgroundColor: const Color(AppConstants.primaryRed),
             child: const Icon(
               Icons.add,
-              color: Colors.white,
+              color: Color.fromARGB(255, 255, 172, 172),
             ),
           ),
         );

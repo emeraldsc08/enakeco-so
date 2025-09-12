@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 
+import '../entities/laporan_penjualan_entity.dart';
 import '../entities/stock_opname_entity.dart';
 
 abstract class StockOpnameRepository {
@@ -7,4 +8,5 @@ abstract class StockOpnameRepository {
   Future<Either<String, StockOpnameEntity>> createStockOpname(StockOpnameEntity stockOpname);
   Future<Either<String, StockOpnameEntity>> getStockOpnameById(String id);
   Future<Either<String, StockOpnameEntity>> updateStockOpname(StockOpnameEntity stockOpname);
+  Future<Either<String, List<LaporanPenjualanEntity>>> getListSO(String tanggal);
 }

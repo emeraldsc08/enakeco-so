@@ -2,11 +2,13 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/network/base_response.dart';
 import '../../domain/entities/stock_opname_entity.dart';
+import '../models/laporan_penjualan_model.dart';
 import '../models/stock_opname_model.dart';
 
 abstract class StockOpnameRemoteDataSource {
   Future<BaseResponse<List<StockOpnameModel>>> getStockOpnameList();
   Future<BaseResponse<StockOpnameModel>> createStockOpname(StockOpnameModel stockOpname);
+  Future<BaseResponse<List<LaporanPenjualanModel>>> getListSO(String tanggal);
 }
 
 class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
@@ -75,6 +77,40 @@ class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
       );
 
       return BaseResponse.success(data: newStockOpname);
+    } catch (e) {
+      return BaseResponse.error(message: e.toString());
+    }
+  }
+
+  @override
+  Future<BaseResponse<List<LaporanPenjualanModel>>> getListSO(String tanggal) async {
+    try {
+      final response = await client.get(
+        '/api/stock/list-so',
+        queryParameters: {
+          'tanggal': tanggal,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+
+        if (responseData['message'] == 'Success' && responseData['data'] != null) {
+          final List<dynamic> dataList = responseData['data'];
+          final List<LaporanPenjualanModel> laporanList = dataList
+              .map((item) => LaporanPenjualanModel.fromJson(item))
+              .toList();
+
+          return BaseResponse.success(data: laporanList);
+        } else {
+          return BaseResponse.error(message: responseData['message'] ?? 'Failed to fetch data');
+        }
+      } else {
+        return BaseResponse.error(
+          message: 'Failed to fetch data',
+          statusCode: response.statusCode,
+        );
+      }
     } catch (e) {
       return BaseResponse.error(message: e.toString());
     }

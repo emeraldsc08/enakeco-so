@@ -1,8 +1,8 @@
-import 'package:enakeco_so/features/stock_opname/data/models/laporan_penjualan_model.dart';
+import 'package:enakeco_so/features/stock_opname/domain/entities/laporan_penjualan_entity.dart';
 import 'package:flutter/material.dart';
 
 class ListLaporanSOView extends StatelessWidget {
-  final LaporanPenjualanModel laporanPenjualan;
+  final LaporanPenjualanEntity laporanPenjualan;
   const ListLaporanSOView({super.key, required this.laporanPenjualan});
 
   @override

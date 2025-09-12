@@ -9,11 +9,15 @@ import '../../../../core/styles/app_styles.dart';
 import 'product_detail_page.dart';
 
 class QRScannerPage extends StatefulWidget {
-  final String cGudang; // Parameter untuk menentukan dari menu mana (RTL, GRS, RSK)
+  final String
+      cGudang; // Parameter untuk menentukan dari menu mana (RTL, GRS, RSK)
+  final bool
+      returnToCaller; // Parameter untuk menentukan apakah kembali ke caller atau ke ProductDetailPage
 
   const QRScannerPage({
     super.key,
     required this.cGudang,
+    this.returnToCaller = false, // Default false untuk backward compatibility
   });
 
   @override
@@ -45,22 +49,29 @@ class _QRScannerPageState extends State<QRScannerPage> {
   }
 
   void _handleQRResult(String qrCode) {
-    // Get current branch ID from GlobalBranchProvider
-    final globalBranchProvider = Provider.of<GlobalBranchProvider>(context, listen: false);
-    final branchId = globalBranchProvider.currentBranchId;
+    if (widget.returnToCaller) {
+      // Return to the calling page with the scanned barcode
+      Navigator.pop(context, '182052'); // TODO: Remove this
+      // Navigator.pop(context, qrCode);
+    } else {
+      // Get current branch ID from GlobalBranchProvider
+      final globalBranchProvider =
+          Provider.of<GlobalBranchProvider>(context, listen: false);
+      final branchId = globalBranchProvider.currentBranchId;
 
-    // Navigate directly to ProductDetailPage and replace the scanner page
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProductDetailPage(
-          cKode: null, // Null karena dari scan barcode
-          cKodebar: qrCode, // Value dari hasil scan barcode
-          branchId: branchId,
-          cGudang: widget.cGudang,
+      // Navigate directly to ProductDetailPage and replace the scanner page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductDetailPage(
+            cKode: null, // Null karena dari scan barcode
+            cKodebar: qrCode, // Value dari hasil scan barcode
+            branchId: branchId,
+            cGudang: widget.cGudang,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -116,7 +127,8 @@ class _QRScannerPageState extends State<QRScannerPage> {
                     vertical: AppConstants.paddingMedium,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.radiusMedium),
                   ),
                 ),
                 child: const Text('Grant Permission'),
@@ -189,7 +201,8 @@ class _QRScannerPageState extends State<QRScannerPage> {
                   ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.radiusMedium),
                   ),
                   child: Column(
                     children: [
@@ -294,7 +307,8 @@ class ScannerOverlay extends CustomPainter {
         PathOperation.difference,
         Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
         Path()
-          ..addRRect(RRect.fromRectAndRadius(scanArea, const Radius.circular(10))),
+          ..addRRect(
+              RRect.fromRectAndRadius(scanArea, const Radius.circular(10))),
       ),
       paint,
     );
