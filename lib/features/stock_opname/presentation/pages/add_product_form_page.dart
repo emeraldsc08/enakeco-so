@@ -33,12 +33,14 @@ class _AddProductFormPageState extends State<AddProductFormPage> {
   ProductDetailModel? _scannedProduct;
   bool _isLoading = false;
   bool _isScanning = false;
+  final _manualBarcodeController = TextEditingController();
 
   @override
   void dispose() {
     _qty1Controller.dispose();
     _qty2Controller.dispose();
     _qty3Controller.dispose();
+    _manualBarcodeController.dispose();
     super.dispose();
   }
 
@@ -64,6 +66,16 @@ class _AddProductFormPageState extends State<AddProductFormPage> {
     setState(() {
       _isScanning = false;
     });
+  }
+
+  Future<void> _searchProductManually() async {
+    final barcode = _manualBarcodeController.text.trim();
+    if (barcode.isEmpty) {
+      _showErrorSnackBar('Masukkan kode terlebih dahulu');
+      return;
+    }
+
+    await _fetchProductDetails(barcode);
   }
 
   Future<void> _fetchProductDetails(String barcode) async {
@@ -116,18 +128,13 @@ class _AddProductFormPageState extends State<AddProductFormPage> {
   void _saveProduct() {
     if (_formKey.currentState!.validate()) {
       if (_scannedProduct == null) {
-        _showErrorSnackBar('Silakan scan produk terlebih dahulu');
+        _showErrorSnackBar('Silakan pilih produk terlebih dahulu');
         return;
       }
 
       final qty1 = int.tryParse(_qty1Controller.text) ?? 0;
       final qty2 = int.tryParse(_qty2Controller.text) ?? 0;
       final qty3 = int.tryParse(_qty3Controller.text) ?? 0;
-
-      if (qty1 <= 0 && qty2 <= 0 && qty3 <= 0) {
-        _showErrorSnackBar('Minimal satu kuantitas harus diisi');
-        return;
-      }
 
       // Create product with updated quantities
       final savedProduct = ProductDetailModel(
@@ -159,6 +166,7 @@ class _AddProductFormPageState extends State<AddProductFormPage> {
       _qty1Controller.clear();
       _qty2Controller.clear();
       _qty3Controller.clear();
+      _manualBarcodeController.clear();
     });
     _showSuccessSnackBar('Form berhasil direset');
   }
@@ -169,6 +177,7 @@ class _AddProductFormPageState extends State<AddProductFormPage> {
       _qty1Controller.clear();
       _qty2Controller.clear();
       _qty3Controller.clear();
+      _manualBarcodeController.clear();
     });
   }
 
@@ -213,49 +222,33 @@ class _AddProductFormPageState extends State<AddProductFormPage> {
         elevation: 0,
       ),
       body: _scannedProduct == null
-          ? // Show centered scan button when no product
-          Center(
-              child: Container(
-                margin: const EdgeInsets.all(AppConstants.paddingLarge),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
+          ? // Show product selection options when no product
+          Padding(
+              padding: const EdgeInsets.all(AppConstants.paddingLarge),
+              child: Column(
+                children: [
+                  // Simple Header
+
+                  Text(
+                    'Pilih cara untuk mencari produk',
+                    style: TextStyle(
+                      fontSize: AppConstants.fontSizeMedium,
+                      color:
+                          const Color(AppConstants.darkGray).withOpacity(0.7),
                     ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(AppConstants.paddingLarge),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // QR Code Icon
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: const Color(AppConstants.primaryRed),
-                        borderRadius: BorderRadius.circular(40),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(AppConstants.primaryRed)
-                                .withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        onPressed: _isScanning ? null : _scanProduct,
-                        icon: _isScanning
+                  ),
+
+                  // Scan Option
+                  Card(
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: const Color(AppConstants.primaryRed),
+                        child: _isScanning
                             ? const SizedBox(
-                                width: 30,
-                                height: 30,
+                                width: 20,
+                                height: 20,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 3,
+                                  strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                       Colors.white),
                                 ),
@@ -263,35 +256,112 @@ class _AddProductFormPageState extends State<AddProductFormPage> {
                             : const Icon(
                                 Icons.qr_code_scanner,
                                 color: Colors.white,
-                                size: 40,
+                                size: 24,
                               ),
                       ),
-                    ),
-                    const SizedBox(height: AppConstants.paddingMedium),
-                    // Button Text
-                    Text(
-                      _isScanning ? 'Memindai...' : 'Tap untuk Scan QR Code',
-                      style: const TextStyle(
-                        color: Color(AppConstants.darkGray),
-                        fontSize: AppConstants.fontSizeMedium,
-                        fontWeight: FontWeight.w600,
+                      title: Text(
+                        _isScanning ? 'Memindai...' : 'Scan Barcode',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
+                      subtitle: const Text('Arahkan kamera ke barcode produk'),
+                      trailing: _isScanning
+                          ? null
+                          : const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Color(AppConstants.darkGray),
+                            ),
+                      onTap: _isScanning ? null : _scanProduct,
                     ),
-                    const SizedBox(height: AppConstants.paddingSmall),
-                    // Subtitle
-                    Text(
-                      'Arahkan kamera ke barcode produk',
-                      style: TextStyle(
-                        color:
-                            const Color(AppConstants.darkGray).withOpacity(0.7),
-                        fontSize: AppConstants.fontSizeSmall,
-                        fontWeight: FontWeight.w400,
+                  ),
+                  const SizedBox(height: AppConstants.paddingMedium),
+
+                  // Divider
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+                        child: Text(
+                          'ATAU',
+                          style: TextStyle(
+                            fontSize: AppConstants.fontSizeSmall,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(AppConstants.darkGray).withOpacity(0.5),
+                          ),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: AppConstants.paddingMedium),
+
+                  // Manual Input Option
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Color(AppConstants.primaryRed),
+                                radius: 16,
+                                child: Icon(
+                                  Icons.keyboard_outlined,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                              SizedBox(width: AppConstants.paddingSmall),
+                              Text(
+                                'Input Manual',
+                                style: TextStyle(
+                                  fontSize: AppConstants.fontSizeMedium,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppConstants.paddingMedium),
+                          TextFormField(
+                            controller: _manualBarcodeController,
+                            decoration: const InputDecoration(
+                              labelText: 'Masukkan Kode',
+                              hintText: 'Contoh: 1234567890123',
+                              prefixIcon: Icon(Icons.barcode_reader),
+                            ),
+                          ),
+                          const SizedBox(height: AppConstants.paddingMedium),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed:
+                                  _isLoading ? null : _searchProductManually,
+                              icon: _isLoading
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                      ),
+                                    )
+                                  : const Icon(Icons.search, size: 18),
+                              label: Text(
+                                  _isLoading ? 'Mencari...' : 'Cari Produk'),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             )
           : // Show product form when product is scanned

@@ -150,7 +150,9 @@ class StockOpnameRemoteDataSourceImpl implements StockOpnameRemoteDataSource {
       if (response.statusCode == 200) {
         final responseData = response.data;
 
-        if (responseData['message'] == 'Success') {
+        // Check if the message indicates success (contains "berhasil" or "success")
+        final message = responseData['message']?.toString().toLowerCase() ?? '';
+        if (message.contains('berhasil') || message.contains('success')) {
           final StockOpnameResponseModel responseModel =
               StockOpnameResponseModel.fromJson(responseData);
           return BaseResponse.success(data: responseModel);
