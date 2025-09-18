@@ -305,7 +305,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: ListView(
                             children: [
                               SizedBox(
-                                height: MediaQuery.of(context).size.height * 0.3,
+                                height:
+                                    MediaQuery.of(context).size.height * 0.3,
                                 child: Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -418,7 +419,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                               ? const Color(0xFF48BB78)
                                                   .withOpacity(0.1)
                                               : Colors.grey.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
                                         ),
                                         child: Text(
                                           user.isAdmin == 1 ? 'Admin' : 'User',
@@ -435,7 +437,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                       if (_isCurrentUserAdmin(context))
                                         Container(
                                           decoration: const BoxDecoration(
-                                            color: Color(AppConstants.primaryRed),
+                                            color:
+                                                Color(AppConstants.primaryRed),
                                             shape: BoxShape.circle,
                                           ),
                                           child: IconButton(
@@ -445,10 +448,12 @@ class _SettingsPageState extends State<SettingsPage> {
                                               size: 18,
                                             ),
                                             onPressed: () async {
-                                              final result = await Navigator.push(
+                                              final result =
+                                                  await Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder: (context) => EditUserPage(user: user),
+                                                  builder: (context) =>
+                                                      EditUserPage(user: user),
                                                 ),
                                               );
 
@@ -475,27 +480,30 @@ class _SettingsPageState extends State<SettingsPage> {
 
                 // Add User Button - Only for Admin
                 if (_isCurrentUserAdmin(context))
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton.icon(
-                        onPressed: _navigateToAddUser,
-                        icon: const Icon(Icons.add, size: 20),
-                        label: const Text(
-                          'Tambah User',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                  SafeArea(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          onPressed: _navigateToAddUser,
+                          icon: const Icon(Icons.add, size: 20),
+                          label: const Text(
+                            'Tambah User',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(AppConstants.primaryRed),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(AppConstants.primaryRed),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),

@@ -25,7 +25,6 @@ class _AddUserPageState extends State<AddUserPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _selectedUserId;
-  String? _selectedUsername;
   String? _passwordError;
   String? _confirmPasswordError;
 
@@ -40,7 +39,11 @@ class _AddUserPageState extends State<AddUserPage> {
       ),
     );
     _provider.addListener(_onProviderChanged);
-    _fetchMasterUsers();
+
+    // Fetch master users after a short delay to ensure provider is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchMasterUsers();
+    });
 
     // Add listeners for real-time validation
     _passwordController.addListener(_validatePassword);
@@ -91,28 +94,34 @@ class _AddUserPageState extends State<AddUserPage> {
   Future<void> _fetchMasterUsers() async {
     try {
       await _provider.fetchMasterUsers();
+      print('Master users loaded: ${_provider.masterUsers.length}');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('Error fetching master users: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   void _searchMasterUsers(String query) {
+    print('Searching for: "$query"');
+    print('Total master users: ${_provider.masterUsers.length}');
     _provider.searchMasterUsers(query);
+    print('Filtered users: ${_provider.filteredMasterUsers.length}');
     setState(() {}); // Update UI when search changes
   }
 
   void _selectUser(String userId, String username) {
     setState(() {
       _selectedUserId = userId;
-      _selectedUsername = username;
       _nameController.text = username;
     });
-    Navigator.pop(context); // Close search dialog
+    // Dialog akan ditutup dari dalam dialog itu sendiri
   }
 
   bool _validateForm() {
@@ -545,60 +554,88 @@ class _AddUserPageState extends State<AddUserPage> {
   }
 
   void _showMasterUserDialog() {
+    // Clear search controller before showing dialog
+    _searchController.clear();
+    _provider.clearMasterSearch();
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Pilih User'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Search Field
-              TextField(
-                controller: _searchController,
-                onChanged: _searchMasterUsers,
-                decoration: InputDecoration(
-                  hintText: 'Cari user...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Pilih User'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 400, // Fixed height untuk dialog
+              child: Column(
+                children: [
+                  // Search Field
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (query) {
+                      _searchMasterUsers(query);
+                      setDialogState(() {}); // Update dialog state
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Cari user...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // User List
-              Flexible(
-                child: _provider.isLoadingMasterUsers
-                    ? const Center(
-                        child: CircularProgressIndicator(),
-                      )
-                    : _provider.masterUsers.isEmpty
+                  const SizedBox(height: 16),
+                  // Debug info
+                  if (_provider.masterUsers.isNotEmpty)
+                    Text(
+                      'Total: ${_provider.masterUsers.length} | Filtered: ${_provider.filteredMasterUsers.length}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  const SizedBox(height: 8),
+                  // User List
+                  Expanded(
+                    child: _provider.isLoadingMasterUsers
                         ? const Center(
-                            child: Text('Tidak ada data user'),
+                            child: CircularProgressIndicator(),
                           )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: _provider.filteredMasterUsers.length,
-                            itemBuilder: (context, index) {
-                              final user = _provider.filteredMasterUsers[index];
-                              return ListTile(
-                                title: Text(user.username),
-                                subtitle: Text('#${user.id}'),
-                                onTap: () => _selectUser(user.id.toString(), user.username),
-                              );
-                            },
-                          ),
+                        : _provider.masterUsers.isEmpty
+                            ? const Center(
+                                child: Text('Tidak ada data user'),
+                              )
+                            : _provider.filteredMasterUsers.isEmpty
+                                ? const Center(
+                                    child: Text('Tidak ada user yang cocok'),
+                                  )
+                                : ListView.builder(
+                                    itemCount: _provider.filteredMasterUsers.length,
+                                    itemBuilder: (context, index) {
+                                      final user = _provider.filteredMasterUsers[index];
+                                      return ListTile(
+                                        title: Text(user.username),
+                                        subtitle: Text('#${user.id}'),
+                                        onTap: () {
+                                          _selectUser(user.id.toString(), user.username);
+                                          Navigator.pop(context); // Close dialog after selection
+                                        },
+                                      );
+                                    },
+                                  ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  _searchController.clear(); // Clear search when closing
+                  _provider.clearMasterSearch();
+                  Navigator.pop(context);
+                },
+                child: const Text('Batal'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
